@@ -3,68 +3,87 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Zeus Broadcast Service</title>
+<title>Zeus Broadcast Service - Consulta de Equipamentos</title>
 
 <style>
+
 *{
     margin:0;
     padding:0;
     box-sizing:border-box;
-    font-family:Arial, sans-serif;
+    font-family:'Segoe UI',sans-serif;
 }
 
 body{
-    background:#111827;
+    background:#050505;
     color:white;
-    padding:20px;
+    min-height:100vh;
+    padding:25px;
 }
 
 .container{
-    max-width:800px;
+    max-width:900px;
     margin:auto;
 }
 
-.logo{
+.header{
     text-align:center;
-    margin-bottom:30px;
+    margin-bottom:35px;
 }
 
-.logo img{
-    max-width:220px;
-    border-radius:10px;
+.logo{
+    width:180px;
+    max-width:90%;
 }
 
 h1{
-    text-align:center;
     margin-top:15px;
+    font-size:2rem;
 }
 
-.sub{
-    text-align:center;
-    color:#9ca3af;
-    margin-bottom:30px;
+.subtitulo{
+    color:#ff8c00;
+    margin-top:8px;
+}
+
+.busca{
+    margin-top:20px;
 }
 
 input{
     width:100%;
-    padding:15px;
+    padding:18px;
+    border-radius:15px;
+    border:2px solid #ff8c00;
+    background:#111;
+    color:white;
     font-size:18px;
-    border:none;
-    border-radius:10px;
-    margin-bottom:20px;
+    outline:none;
+}
+
+input:focus{
+    box-shadow:0 0 15px rgba(255,140,0,.4);
 }
 
 .card{
-    background:#1f2937;
-    padding:20px;
-    border-radius:12px;
     display:none;
+    margin-top:25px;
+    background:#111;
+    border-left:6px solid #ff8c00;
+    border-radius:15px;
+    padding:25px;
+}
+
+.modelo{
+    font-size:28px;
+    font-weight:bold;
+    margin-bottom:10px;
 }
 
 .status{
     font-size:22px;
     font-weight:bold;
-    margin-bottom:10px;
+    margin-bottom:15px;
 }
 
 .atendemos{
@@ -72,18 +91,31 @@ input{
 }
 
 .descontinuado{
-    color:#f59e0b;
+    color:#ffb020;
 }
 
 .naopegamos{
     color:#ef4444;
 }
 
+.obs{
+    color:#ddd;
+    line-height:1.7;
+}
+
 .footer{
     text-align:center;
     margin-top:40px;
-    color:#6b7280;
+    color:#777;
+    font-size:14px;
 }
+
+.loading{
+    text-align:center;
+    margin-top:20px;
+    color:#ff8c00;
+}
+
 </style>
 </head>
 
@@ -91,17 +123,35 @@ input{
 
 <div class="container">
 
-<div class="logo">
-<img src="https://i.imgur.com/yK9z4cP.png" alt="Zeus">
+<div class="header">
+
+<!-- TROQUE PELO LINK DO SEU LOGO -->
+<img
+class="logo"
+src="https://i.imgur.com/yK9z4cP.png"
+alt="Zeus">
+
 <h1>Consulta de Equipamentos</h1>
-<p class="sub">Zeus Broadcast Service</p>
+
+<div class="subtitulo">
+Zeus Broadcast Service
 </div>
 
+</div>
+
+<div class="busca">
+
 <input
-id="busca"
 type="text"
+id="busca"
 placeholder="Digite o modelo do equipamento..."
 oninput="consultar()">
+
+</div>
+
+<div id="loading" class="loading">
+Carregando base de equipamentos...
+</div>
 
 <div id="resultado" class="card"></div>
 
@@ -116,83 +166,104 @@ Sistema interno Zeus Broadcast Service
 const csvUrl =
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vSwxpm5HcLltf5R6mFHVFkiFLL9orTwsMqq8zRCe0NNotWDoZ4f38t1qlpdMArCJ3UpOn3xXu2-2m5o/pub?output=csv";
 
-let equipamentos=[];
+let equipamentos = [];
 
 fetch(csvUrl)
-.then(r=>r.text())
-.then(texto=>{
+.then(response => response.text())
+.then(csv => {
 
-const linhas = texto.trim().split("\n").slice(1);
+document.getElementById("loading").style.display="none";
 
-equipamentos = linhas.map(linha=>{
+const linhas = csv.trim().split("\n");
 
-const c = linha.split(",");
+for(let i=1;i<linhas.length;i++){
 
-return{
-modelo:(c[0]||"").trim(),
-status:(c[1]||"").trim(),
-obs:(c[2]||"").trim()
-}
+const colunas = linhas[i].split(",");
+
+equipamentos.push({
+
+modelo:(colunas[0] || "").trim(),
+status:(colunas[1] || "").trim(),
+obs:(colunas[2] || "").trim()
 
 });
+
+}
+
+})
+.catch(() => {
+
+document.getElementById("loading").innerHTML =
+"Erro ao carregar a planilha.";
 
 });
 
 function consultar(){
 
-const busca =
-document.getElementById("busca")
+const termo =
+document
+.getElementById("busca")
 .value
-.toLowerCase();
+.toLowerCase()
+.trim();
 
 const resultado =
 document.getElementById("resultado");
 
-if(!busca){
+if(!termo){
+
 resultado.style.display="none";
 return;
+
 }
 
 const encontrados =
-equipamentos.filter(e=>
-e.modelo.toLowerCase().includes(busca)
+equipamentos.filter(item =>
+item.modelo.toLowerCase().includes(termo)
 );
 
 if(encontrados.length===0){
 
 resultado.style.display="block";
 
-resultado.innerHTML=
-"<h3>Equipamento não encontrado</h3>";
+resultado.innerHTML = `
+<div class="modelo">
+Equipamento não encontrado
+</div>
+
+<div class="obs">
+Verifique o modelo digitado.
+</div>
+`;
 
 return;
+
 }
 
 const eq = encontrados[0];
 
-let classe="";
+let classe = "naopegamos";
 
 if(eq.status.toLowerCase().includes("atend"))
-classe="atendemos";
+classe = "atendemos";
 
-else if(eq.status.toLowerCase().includes("descontinu"))
-classe="descontinuado";
-
-else
-classe="naopegamos";
+if(eq.status.toLowerCase().includes("descontinu"))
+classe = "descontinuado";
 
 resultado.style.display="block";
 
-resultado.innerHTML=`
+resultado.innerHTML = `
 <div class="status ${classe}">
 ${eq.status}
 </div>
 
-<h2>${eq.modelo}</h2>
+<div class="modelo">
+${eq.modelo}
+</div>
 
-<p style="margin-top:15px;">
+<div class="obs">
 ${eq.obs}
-</p>
+</div>
 `;
 
 }
