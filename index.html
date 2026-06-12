@@ -1,1 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zeus Broadcast Service</title>
 
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, sans-serif;
+}
+
+body{
+    background:#111827;
+    color:white;
+    padding:20px;
+}
+
+.container{
+    max-width:800px;
+    margin:auto;
+}
+
+.logo{
+    text-align:center;
+    margin-bottom:30px;
+}
+
+.logo img{
+    max-width:220px;
+    border-radius:10px;
+}
+
+h1{
+    text-align:center;
+    margin-top:15px;
+}
+
+.sub{
+    text-align:center;
+    color:#9ca3af;
+    margin-bottom:30px;
+}
+
+input{
+    width:100%;
+    padding:15px;
+    font-size:18px;
+    border:none;
+    border-radius:10px;
+    margin-bottom:20px;
+}
+
+.card{
+    background:#1f2937;
+    padding:20px;
+    border-radius:12px;
+    display:none;
+}
+
+.status{
+    font-size:22px;
+    font-weight:bold;
+    margin-bottom:10px;
+}
+
+.atendemos{
+    color:#22c55e;
+}
+
+.descontinuado{
+    color:#f59e0b;
+}
+
+.naopegamos{
+    color:#ef4444;
+}
+
+.footer{
+    text-align:center;
+    margin-top:40px;
+    color:#6b7280;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="logo">
+<img src="https://i.imgur.com/yK9z4cP.png" alt="Zeus">
+<h1>Consulta de Equipamentos</h1>
+<p class="sub">Zeus Broadcast Service</p>
+</div>
+
+<input
+id="busca"
+type="text"
+placeholder="Digite o modelo do equipamento..."
+oninput="consultar()">
+
+<div id="resultado" class="card"></div>
+
+<div class="footer">
+Sistema interno Zeus Broadcast Service
+</div>
+
+</div>
+
+<script>
+
+const csvUrl =
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vSwxpm5HcLltf5R6mFHVFkiFLL9orTwsMqq8zRCe0NNotWDoZ4f38t1qlpdMArCJ3UpOn3xXu2-2m5o/pub?output=csv";
+
+let equipamentos=[];
+
+fetch(csvUrl)
+.then(r=>r.text())
+.then(texto=>{
+
+const linhas = texto.trim().split("\n").slice(1);
+
+equipamentos = linhas.map(linha=>{
+
+const c = linha.split(",");
+
+return{
+modelo:(c[0]||"").trim(),
+status:(c[1]||"").trim(),
+obs:(c[2]||"").trim()
+}
+
+});
+
+});
+
+function consultar(){
+
+const busca =
+document.getElementById("busca")
+.value
+.toLowerCase();
+
+const resultado =
+document.getElementById("resultado");
+
+if(!busca){
+resultado.style.display="none";
+return;
+}
+
+const encontrados =
+equipamentos.filter(e=>
+e.modelo.toLowerCase().includes(busca)
+);
+
+if(encontrados.length===0){
+
+resultado.style.display="block";
+
+resultado.innerHTML=
+"<h3>Equipamento não encontrado</h3>";
+
+return;
+}
+
+const eq = encontrados[0];
+
+let classe="";
+
+if(eq.status.toLowerCase().includes("atend"))
+classe="atendemos";
+
+else if(eq.status.toLowerCase().includes("descontinu"))
+classe="descontinuado";
+
+else
+classe="naopegamos";
+
+resultado.style.display="block";
+
+resultado.innerHTML=`
+<div class="status ${classe}">
+${eq.status}
+</div>
+
+<h2>${eq.modelo}</h2>
+
+<p style="margin-top:15px;">
+${eq.obs}
+</p>
+`;
+
+}
+
+</script>
+
+</body>
+</html>
